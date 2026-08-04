@@ -128,9 +128,9 @@ void correct_IMU (IMU &data, Offset &calibration){
 
   //Deadband filter
   //Angular acceleration must have large enough magnitude to filter out gyroscope noise 
-  if (abs(data.gyro_x) < 0.05) data.gyro_x = 0.0;
-  if (abs(data.gyro_y) < 0.05) data.gyro_y = 0.0;
-  if (abs(data.gyro_z) < 0.05) data.gyro_z = 0.0;
+  if (abs(data.gyro_x) < GYRO_DEADBAND) data.gyro_x = 0.0;
+  if (abs(data.gyro_y) < GYRO_DEADBAND) data.gyro_y = 0.0;
+  if (abs(data.gyro_z) < GYRO_DEADBAND) data.gyro_z = 0.0;
 }
 
 void filter_IMU (IMU &data, Attitude &orientation, float dt){

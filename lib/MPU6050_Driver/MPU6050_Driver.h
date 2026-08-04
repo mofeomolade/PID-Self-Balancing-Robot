@@ -8,6 +8,7 @@
 #define WAKE_REGISTER 0x6B
 #define ACCEL_START_REGISTER 0x3B
 #define RAD_TO_DEGREES 180.0 / PI
+#define GYRO_DEADBAND 0.15
 
 struct IMU {
   float accel_x, accel_y, accel_z;
