@@ -1,23 +1,25 @@
 #include <MPU6050_Driver.h>
 
-#define IN1_PIN 5
-#define IN2_PIN 4
-#define IN3_PIN 3
-#define IN4_PIN 2
-#define ENA_PIN 10
-#define ENB_PIN 9
+#define IN1_PIN 20
+#define IN2_PIN 8
+#define IN3_PIN 9
+#define IN4_PIN 10
 
 // put function declarations here:
-int myFunction(int, int);
+
 
 void setup() {
   // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  pinMode(IN1_PIN, OUTPUT);
+  pinMode(IN2_PIN, OUTPUT);
+  pinMode(IN3_PIN, OUTPUT);
+  pinMode(IN4_PIN, OUTPUT);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  digitalWrite (IN3_PIN, HIGH);
+  digitalWrite(IN4_PIN, LOW);
 }
 
 // put function definitions here:
-void drive_motors()
+void drive_motors();
