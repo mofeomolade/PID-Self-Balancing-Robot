@@ -10,7 +10,7 @@
 //IN2 & IN3 = Forwards (if pitch is negative)
 //IN1 & IN4 = Backwards (if pitch is positive)
 
-#define MIN_DUTY 4
+#define MIN_DUTY 40
 
 #define ENA_PIN 3
 #define ENB_PIN 2
@@ -25,7 +25,7 @@ struct Attitude attitude;
 
 //All relevant variables for PID control can be called by function in a single struct
 struct PID {
-  float KP = 18, KI = 0, KD = 0;
+  float KP = 22, KI = 0, KD = 0;
   
   float error;
   float last_error;
@@ -143,7 +143,7 @@ void PID_control (PID &controller, Attitude &orientation, float dt) {
       controller.output = -255;
     }
     float duty = abs(controller.output);
-    duty = map(duty, 0, 255, MIN_DUTY, 255); //Adjust duty to meet the minimum PWM threshold to drive motors
+    duty = MIN_DUTY + (duty * (255.0 - MIN_DUTY) / 255.0);
     //Next step: make motor spin in correct direction with duty cycle based on controller output.
   
     //Front of robot pointing up. Move back to compensate.
