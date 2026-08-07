@@ -10,11 +10,13 @@
 //IN2 & IN3 = Forwards (if pitch is negative)
 //IN1 & IN4 = Backwards (if pitch is positive)
 
+#define MIN_PWM 4
+
 #define ENA_PIN 3
 #define ENB_PIN 2
 
 #define TARGET_ANGLE 0
-#define MAX_ANGLE 45 //Shutdown angle to prevent
+#define MAX_ANGLE 70 //Shutdown angle to prevent
 
 //Structs to utilize custom MPU_6050 library
 struct IMU imu;
@@ -23,7 +25,7 @@ struct Attitude attitude;
 
 //All relevant variables for PID control can be called by function in a single struct
 struct PID {
-  float KP = 10, KI = 0.5, KD = 2;
+  float KP = 12, KI = 0, KD = 0;
   
   float error;
   float last_error;
@@ -46,7 +48,9 @@ void PID_control (PID &controller, Attitude &orientation, float dt);
 
 void setup() {
   // put your setup code here, to run once:
-  
+  analogWriteResolution(8);
+  analogWriteFrequency(1000);
+
   //Set GPIO pins to output to drive motors
   pinMode(IN1_PIN, OUTPUT);
   pinMode(IN2_PIN, OUTPUT);
@@ -77,6 +81,21 @@ void setup() {
 }
 
 void loop() {
+  //TESTING PWM DUTY
+
+  for(int duty = 0; duty <= 255; duty += 5){
+    analogWrite(ENA_PIN, duty);
+    analogWrite(ENB_PIN, duty);
+    
+    digitalWrite(IN2_PIN, HIGH);
+    digitalWrite(IN1_PIN, LOW);
+
+    digitalWrite(IN3_PIN, HIGH);
+    digitalWrite(IN4_PIN, LOW);
+    delay(1000);
+  }
+
+  /*
   current_time = micros();
   dt = (current_time - last_time) / 1000000.0; //Measure dt for PID calculus and IMU data filtering
   last_time = current_time;
@@ -88,7 +107,7 @@ void loop() {
 
     PID_control(pid, attitude, dt);
   }
-
+    */
 }
 
 // put function definitions here:
