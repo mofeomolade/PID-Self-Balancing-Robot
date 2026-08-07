@@ -101,8 +101,6 @@ void offset_test(IMU &data, Offset &calibration){
     sum_gyro_x += data.gyro_x;
     sum_gyro_y += data.gyro_y;
     sum_gyro_z += data.gyro_z;
-
-    delay(2); //500Hz polling
   }
 
   //Take the accelerometer drift avg over all runs

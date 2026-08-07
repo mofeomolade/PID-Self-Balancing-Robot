@@ -10,8 +10,8 @@
 //IN2 & IN3 = Forwards (if pitch is negative)
 //IN1 & IN4 = Backwards (if pitch is positive)
 
-#define ENA_PIN 1
-#define ENB_PIN 0
+#define ENA_PIN 3
+#define ENB_PIN 2
 
 #define TARGET_ANGLE 0
 #define MAXIMUM_ANGLE 45 //Shutdown angle to prevent
@@ -25,6 +25,7 @@ struct IMU imu;
 struct Offset offset;
 struct Attitude attitude;
 
+//All relevant variables for PID control can be called by function in a single struct
 struct PID{
   float IMU_measurement;
   float current_error;
@@ -39,8 +40,10 @@ unsigned long last_time;
 float dt;
 
 // put function declarations here:
-void drive_forward (void);
-void drive_backwards (void);
+void drive_forward (void); //Use to adjust when pitch is positive
+void drive_backwards (void); //Use to adjust when pitch is negatibe
+void motor_shutdown (void);
+void PID_control (PID &controller, IMU &data, float dt);
 
 void setup() {
   // put your setup code here, to run once:
@@ -74,14 +77,27 @@ void setup() {
 }
 
 void loop() {
+  /*
   current_time = micros();
-  dt = (current_time - last_time) / 1000000.0;
+  dt = (current_time - last_time) / 1000000.0; //Measure dt for PID calculus and IMU data filtering
   last_time = current_time;
 
+  //Only perform calculations upon successful read
   if(read_IMU(imu) == 0){
     correct_IMU(imu, offset);
     filter_IMU(imu, attitude, dt);
+
+    PID_control(pid, imu, dt);
   }
+  */
+  analogWrite(ENA_PIN, 255); // Full speed enable
+  analogWrite(ENB_PIN, 255);
+
+  digitalWrite(IN2_PIN, HIGH);
+  digitalWrite(IN1_PIN, LOW);
+
+  digitalWrite(IN3_PIN, HIGH);
+  digitalWrite(IN4_PIN, LOW);
 
 }
 
@@ -109,6 +125,6 @@ void motor_shutdown (void){
   digitalWrite(IN3_PIN, LOW);
 }
 
-void PID_control (PID &controller, float dt){
+void PID_control (PID &controller, IMU &data, float dt) {
 
 }
