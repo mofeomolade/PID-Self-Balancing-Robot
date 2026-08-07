@@ -39,8 +39,8 @@ unsigned long last_time;
 float dt;
 
 // put function declarations here:
-void drive_forward (void); //Use to adjust when pitch is positive
-void drive_backwards (void); //Use to adjust when pitch is negatibe
+void drive_forward (float duty); //Use to adjust when pitch is positive
+void drive_backwards (float duty); //Use to adjust when pitch is negatibe
 void motor_shutdown (void);
 void PID_control (PID &controller, Attitude &orientation, float dt);
 
@@ -148,7 +148,7 @@ void PID_control (PID &controller, Attitude &orientation, float dt) {
   
     //Front of robot pointing up. Move back to compensate.
     if(controller.output > 0) {
-      drive_back(duty);
+      drive_backwards(duty);
     }
     //Front of robot pointing down. Move forward to compensate.
     else if (controller.output < 0) {
