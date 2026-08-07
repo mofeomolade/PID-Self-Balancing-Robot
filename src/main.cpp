@@ -82,7 +82,7 @@ void loop() {
   last_time = current_time;
 
   //Only perform calculations upon successful read
-  if(read_IMU(imu) == 0){
+  if(read_IMU(imu) == 0) {
     correct_IMU(imu, offset);
     filter_IMU(imu, attitude, dt);
 
@@ -127,35 +127,38 @@ void PID_control (PID &controller, Attitude &orientation, float dt) {
   
   controller.error = attitude.pitch;
   absolute_error = abs(controller.error);
-  controller.error_sum += controller.error;
+  controller.error_sum += (controller.error * dt);
   
 
   if(absolute_error > 0 && absolute_error <= MAX_ANGLE ) {
     proportional = controller.KP * controller.error;
     integral = controller.KI * controller.error_sum;
     derivative = controller.KD * (controller.error - controller.last_error) / dt;
-    
-    //Two methods of making output fit 8 bit analog value. Scaling vs Capping.
-    /*
-    controller.output = (proportional + integral + derivative) * (controller.error / MAX_ANGLE) * 255; 
 
     controller.output = (proportional + integral + derivative);
-    if(controller.output > 255){
+    if(controller.output > 255) {
       controller.output = 255;
     }
-    else if(controller.output < -255){
+    else if(controller.output < -255) {
       controller.output = -255;
     }
-    */
     
     //Next step: make motor spin in correct direction with duty cycle based on controller output.
-    //Front of robot pointing down. Move forward to compensate. Front of robot pointing up. Move back to compensate.
-
-    if(controller.output > 0){
-
+  
+    //Front of robot pointing up. Move back to compensate.
+    if(controller.output > 0) {
+      
     }
-    else if (controller.output < 0){
+    //Front of robot pointing down. Move forward to compensate.
+    else if (controller.output < 0) {
 
     }
   }
+
+  else {
+    motor_shutdown();
+    controller.error_sum = 0;
+  }
+
+  controller.last_error = controller.error;
 }
