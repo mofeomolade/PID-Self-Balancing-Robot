@@ -10,7 +10,7 @@
 //IN2 & IN3 = Forwards (if pitch is negative)
 //IN1 & IN4 = Backwards (if pitch is positive)
 
-#define MIN_PWM 4
+#define MIN_DUTY 4
 
 #define ENA_PIN 3
 #define ENB_PIN 2
@@ -25,7 +25,7 @@ struct Attitude attitude;
 
 //All relevant variables for PID control can be called by function in a single struct
 struct PID {
-  float KP = 12, KI = 0, KD = 0;
+  float KP = 18, KI = 0, KD = 0;
   
   float error;
   float last_error;
@@ -81,21 +81,6 @@ void setup() {
 }
 
 void loop() {
-  //TESTING PWM DUTY
-
-  for(int duty = 0; duty <= 255; duty += 5){
-    analogWrite(ENA_PIN, duty);
-    analogWrite(ENB_PIN, duty);
-    
-    digitalWrite(IN2_PIN, HIGH);
-    digitalWrite(IN1_PIN, LOW);
-
-    digitalWrite(IN3_PIN, HIGH);
-    digitalWrite(IN4_PIN, LOW);
-    delay(1000);
-  }
-
-  /*
   current_time = micros();
   dt = (current_time - last_time) / 1000000.0; //Measure dt for PID calculus and IMU data filtering
   last_time = current_time;
@@ -107,7 +92,6 @@ void loop() {
 
     PID_control(pid, attitude, dt);
   }
-    */
 }
 
 // put function definitions here:
@@ -141,19 +125,15 @@ void motor_shutdown (void) {
 }
 
 void PID_control (PID &controller, Attitude &orientation, float dt) {
-  static float proportional, integral, derivative;
-  static float absolute_error; 
-  static float duty;
-  
   controller.error = attitude.pitch;
-  absolute_error = abs(controller.error);
+  float absolute_error = abs(controller.error);
   controller.error_sum += (controller.error * dt);
   
   //Check that the robot angle does't exceed maximum tilt
-  if(absolute_error > 0 && absolute_error <= MAX_ANGLE ) {
-    proportional = controller.KP * controller.error;
-    integral = controller.KI * controller.error_sum;
-    derivative = controller.KD * (controller.error - controller.last_error) / dt;
+  if(absolute_error <= MAX_ANGLE ) {
+    float proportional = controller.KP * controller.error;
+    float integral = controller.KI * controller.error_sum;
+    float derivative = controller.KD * (controller.error - controller.last_error) / dt;
 
     controller.output = (proportional + integral + derivative);
     if(controller.output > 255) {
@@ -162,7 +142,8 @@ void PID_control (PID &controller, Attitude &orientation, float dt) {
     else if(controller.output < -255) {
       controller.output = -255;
     }
-    duty = abs(controller.output);
+    float duty = abs(controller.output);
+    duty = map(duty, 0, 255, MIN_DUTY, 255); //Adjust duty to meet the minimum PWM threshold to drive motors
     //Next step: make motor spin in correct direction with duty cycle based on controller output.
   
     //Front of robot pointing up. Move back to compensate.
@@ -179,6 +160,6 @@ void PID_control (PID &controller, Attitude &orientation, float dt) {
     motor_shutdown();
     controller.error_sum = 0;
   }
-  
+
   controller.last_error = controller.error;
 }
