@@ -124,12 +124,13 @@ void motor_shutdown (void) {
 void PID_control (PID &controller, Attitude &orientation, float dt) {
   static float proportional, integral, derivative;
   static float absolute_error; 
+  static float duty;
   
   controller.error = attitude.pitch;
   absolute_error = abs(controller.error);
   controller.error_sum += (controller.error * dt);
   
-
+  //Check that the robot angle does't exceed maximum tilt
   if(absolute_error > 0 && absolute_error <= MAX_ANGLE ) {
     proportional = controller.KP * controller.error;
     integral = controller.KI * controller.error_sum;
@@ -142,16 +143,16 @@ void PID_control (PID &controller, Attitude &orientation, float dt) {
     else if(controller.output < -255) {
       controller.output = -255;
     }
-    
+    duty = abs(controller.output);
     //Next step: make motor spin in correct direction with duty cycle based on controller output.
   
     //Front of robot pointing up. Move back to compensate.
     if(controller.output > 0) {
-      
+      drive_back(duty);
     }
     //Front of robot pointing down. Move forward to compensate.
     else if (controller.output < 0) {
-
+      drive_forward(duty);
     }
   }
 
@@ -159,6 +160,6 @@ void PID_control (PID &controller, Attitude &orientation, float dt) {
     motor_shutdown();
     controller.error_sum = 0;
   }
-
+  
   controller.last_error = controller.error;
 }
