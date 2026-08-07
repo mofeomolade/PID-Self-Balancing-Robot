@@ -14,11 +14,7 @@
 #define ENB_PIN 2
 
 #define TARGET_ANGLE 0
-#define MAXIMUM_ANGLE 45 //Shutdown angle to prevent
-
-#define KP 0
-#define KI 0
-#define KD 0
+#define MAX_ANGLE 45 //Shutdown angle to prevent
 
 //Structs to utilize custom MPU_6050 library
 struct IMU imu;
@@ -26,11 +22,14 @@ struct Offset offset;
 struct Attitude attitude;
 
 //All relevant variables for PID control can be called by function in a single struct
-struct PID{
-  float IMU_measurement;
-  float current_error;
-  float last_error = 0;
-  float output;
+struct PID {
+  float KP = 10, KI = 0.5, KD = 2;
+  
+  float error;
+  float last_error;
+  float error_sum = 0;
+
+  float output = 0;
 };
 
 struct PID pid; //Initialize PID struct to access control data globally
@@ -43,7 +42,7 @@ float dt;
 void drive_forward (void); //Use to adjust when pitch is positive
 void drive_backwards (void); //Use to adjust when pitch is negatibe
 void motor_shutdown (void);
-void PID_control (PID &controller, IMU &data, float dt);
+void PID_control (PID &controller, Attitude &orientation, float dt);
 
 void setup() {
   // put your setup code here, to run once:
@@ -59,12 +58,13 @@ void setup() {
   Wire.begin(SDA, SCL); //Initialize I2C as controller
   Serial.begin(115200);
 
-  write_byte(MAIN_REGISTER, WAKE_REGISTER, WAKE_CMD); //Deactivate sleep mode by writing to PWR_MGMT_1 register
+  uint8_t wake_cmd = WAKE_CMD; 
+  write_byte(MAIN_REGISTER, WAKE_REGISTER, &wake_cmd); //Deactivate sleep mode by writing to PWR_MGMT_1 register
 
   offset_test(imu, offset); //Run initial baseline offset test and store
 
   //Seeding for accurate readings in main loop()
-  if(read_IMU(imu) == 0){
+  if(read_IMU(imu) == 0) {
     correct_IMU(imu, offset);
 
     //Initial orientation calculation so starting position reflects actual orientation
@@ -77,7 +77,6 @@ void setup() {
 }
 
 void loop() {
-  /*
   current_time = micros();
   dt = (current_time - last_time) / 1000000.0; //Measure dt for PID calculus and IMU data filtering
   last_time = current_time;
@@ -87,22 +86,16 @@ void loop() {
     correct_IMU(imu, offset);
     filter_IMU(imu, attitude, dt);
 
-    PID_control(pid, imu, dt);
+    PID_control(pid, attitude, dt);
   }
-  */
-  analogWrite(ENA_PIN, 255); // Full speed enable
-  analogWrite(ENB_PIN, 255);
-
-  digitalWrite(IN2_PIN, HIGH);
-  digitalWrite(IN1_PIN, LOW);
-
-  digitalWrite(IN3_PIN, HIGH);
-  digitalWrite(IN4_PIN, LOW);
 
 }
 
 // put function definitions here:
-void drive_forward (void){
+void drive_forward (float duty) {
+  analogWrite(ENA_PIN, duty);
+  analogWrite(ENB_PIN, duty);
+  
   digitalWrite(IN2_PIN, HIGH);
   digitalWrite(IN1_PIN, LOW);
 
@@ -110,7 +103,10 @@ void drive_forward (void){
   digitalWrite(IN4_PIN, LOW);
 }
 
-void drive_backwards (void){
+void drive_backwards (float duty) {
+  analogWrite(ENA_PIN, duty);
+  analogWrite(ENB_PIN, duty);
+  
   digitalWrite(IN1_PIN, HIGH);
   digitalWrite(IN2_PIN, LOW);
 
@@ -118,13 +114,48 @@ void drive_backwards (void){
   digitalWrite(IN3_PIN, LOW);
 }
 
-void motor_shutdown (void){
+void motor_shutdown (void) {
   digitalWrite(IN1_PIN, LOW);
   digitalWrite(IN2_PIN, LOW);
   digitalWrite(IN4_PIN, LOW);
   digitalWrite(IN3_PIN, LOW);
 }
 
-void PID_control (PID &controller, IMU &data, float dt) {
+void PID_control (PID &controller, Attitude &orientation, float dt) {
+  static float proportional, integral, derivative;
+  static float absolute_error; 
+  
+  controller.error = attitude.pitch;
+  absolute_error = abs(controller.error);
+  controller.error_sum += controller.error;
+  
 
+  if(absolute_error > 0 && absolute_error <= MAX_ANGLE ) {
+    proportional = controller.KP * controller.error;
+    integral = controller.KI * controller.error_sum;
+    derivative = controller.KD * (controller.error - controller.last_error) / dt;
+    
+    //Two methods of making output fit 8 bit analog value. Scaling vs Capping.
+    /*
+    controller.output = (proportional + integral + derivative) * (controller.error / MAX_ANGLE) * 255; 
+
+    controller.output = (proportional + integral + derivative);
+    if(controller.output > 255){
+      controller.output = 255;
+    }
+    else if(controller.output < -255){
+      controller.output = -255;
+    }
+    */
+    
+    //Next step: make motor spin in correct direction with duty cycle based on controller output.
+    //Front of robot pointing down. Move forward to compensate. Front of robot pointing up. Move back to compensate.
+
+    if(controller.output > 0){
+
+    }
+    else if (controller.output < 0){
+
+    }
+  }
 }
